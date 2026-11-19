@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Leonida Platinum — GTA VI Trophy Guide &amp; Tracker</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="title">
+    <h1>Leonida Platinum</h1>
+    <p class="sub">GTA VI trophy guide &amp; tracker — Grand Theft Auto VI on PlayStation 5</p>
+    <p class="counts">55 trophies · 1 platinum · 2 gold · 6 silver · 46 bronze · 28 hidden on PSN</p>
+  </div>
+  <div class="progress" id="progressBox">
+    <div class="big"><span id="earnedCount">0</span><span class="of"> / 55 earned</span></div>
+    <div class="bar"><div class="fill" id="progressFill"></div></div>
+    <p class="points"><span id="pointsEarned">0</span> / 1,350 points · <span id="gradeCounts"></span></p>
+    <p class="next" id="nextUp"></p>
+  </div>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button type="button" data-view="tracker" class="active">Tracker</button>
+  <button type="button" data-view="roadmap">Roadmap to Platinum</button>
+  <button type="button" data-view="missables">Missables <span id="missableCount"></span></button>
+  <button type="button" data-view="about">Sources &amp; About</button>
+</nav>
+
+<section id="view-tracker" class="view">
+  <div class="controls">
+    <label class="search">Search <input id="search" type="search" placeholder="Trophy name, mission, keyword…"></label>
+    <label>Kind
+      <select id="kind">
+        <option value="all">All kinds</option>
+        <option value="story">Story</option>
+        <option value="mission">Story missions</option>
+        <option value="stranger">Stranger strands</option>
+        <option value="collectible">Collectibles</option>
+        <option value="activity">Activities</option>
+        <option value="stunt">Stunts &amp; races</option>
+        <option value="combat">Combat</option>
+        <option value="robbery">Robbery</option>
+        <option value="economy">Economy</option>
+        <option value="exploration">Exploration</option>
+        <option value="secret">Secrets</option>
+        <option value="online">Online</option>
+      </select>
+    </label>
+    <label>Grade
+      <select id="grade">
+        <option value="all">All grades</option>
+        <option value="platinum">Platinum</option>
+        <option value="gold">Gold</option>
+        <option value="silver">Silver</option>
+        <option value="bronze">Bronze</option>
+      </select>
+    </label>
+    <label>Status
+      <select id="status">
+        <option value="all">All</option>
+        <option value="earned">Earned</option>
+        <option value="remaining">Still to earn</option>
+      </select>
+    </label>
+    <label class="check"><input id="missableOnly" type="checkbox"> Missable only</label>
+    <label class="check"><input id="spoiler" type="checkbox"> Spoiler-free: hide hidden story trophies until earned</label>
+    <button id="export" type="button">Export progress</button>
+    <label class="import">Import progress <input id="import" type="file" accept="application/json,.json"></label>
+    <button id="reset" type="button">Reset</button>
+  </div>
+  <p class="hint" id="listHint"></p>
+  <div class="split">
+    <div class="list" id="list"></div>
+    <aside class="detail" id="detail">
+      <p class="detailEmpty">Select a trophy to read its guide, sources and missable note.</p>
+    </aside>
+  </div>
+</section>
+
+<section id="view-roadmap" class="view" hidden>
+  <h2>Roadmap to the platinum</h2>
+  <p class="lede">Built from the official trophy descriptions: play the story first, clear the stranger strands while they are open, then activities, then collectibles and the long grinds. The platinum pops when the other 54 are earned.</p>
+  <div id="roadmap"></div>
+  <h3>Before the final mission — do these first</h3>
+  <ul class="checklist" id="prefinale"></ul>
+</section>
+
+<section id="view-missables" class="view" hidden>
+  <h2>Missable trophies — <span id="missableTotal"></span></h2>
+  <p class="lede">Every trophy below is flagged from its official description: a story beat, a stranger finale, a partner moment or a one-time event that may not come back in the same playthrough. Everything else can be finished in free roam after the finale. When in doubt, replay the mission from the pause menu.</p>
+  <div id="missableList"></div>
+</section>
+
+<section id="view-about" class="view" hidden>
+  <h2>Sources &amp; about</h2>
+  <p>Every trophy's name, description and grade are the official ones as PlayStation publishes them, cross-checked on 2026-11-19 against the two lists that agree on all 55:</p>
+  <ul>
+    <li><a href="https://www.exophase.com/game/grand-theft-auto-vi-psn/trophies/">Exophase — GTA VI trophies (official list)</a></li>
+    <li><a href="https://psnprofiles.com/trophies/43531-grand-theft-auto-vi">PSNProfiles — GTA VI trophies &amp; progress targets</a></li>
+  </ul>
+  <p>Each guide is written in our own words for this guide. Counts such as 42 Shooting Range challenges, 14 drone race locations, 18 meditation spots, 52 areas, 9 gangs, 8 garages and 9 activity types are PSN's progress targets as PSNProfiles lists them. Where the official description gives no exact location, the guide says so instead of inventing one.</p>
+  <p>Missable flags and the roadmap are built from the official descriptions: which story chapters and missions, which stranger strands, which collectibles and counts, in what order.</p>
+  <p>Progress is saved only in your browser (localStorage). Export downloads a JSON file; import reads one back. The app fetches nothing from the network and works fully offline.</p>
+  <p>No Rockstar Games logo, artwork or screenshots are used here — the look is our own. Grand Theft Auto and GTA are trademarks of Rockstar Games; this is an unofficial fan-made guide.</p>
+  <p>Built for the make.fun bounty <a href="https://make.fun/bounty/gta6-trophy-guide-01">gta6-trophy-guide-01</a>. Use referral code <strong>s67gjd7a</strong> on make.fun.</p>
+</section>
+
+<footer>
+  <p>Leonida Platinum — unofficial GTA VI trophy guide &amp; tracker. Works offline. Progress stays in your browser.</p>
+</footer>
+<script type="module" src="app.js"></script>
+</body>
+</html>
