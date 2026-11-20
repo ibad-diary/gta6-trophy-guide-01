@@ -3,8 +3,14 @@
 // localStorage, and renders the tracker, roadmap and missable lists.
 const PROGRESS_KEY = 'leonida-platinum-progress-v1';
 const SPOILER_KEY = 'leonida-platinum-spoiler-v1';
+const COUNTERS_KEY = 'leonida-platinum-counters-v1';
 const POINTS = { platinum: 300, gold: 90, silver: 30, bronze: 15 };
 const DEMO_EARNED = [2, 3, 8, 10, 16, 19, 20, 21, 35, 36, 42, 52, 53];
+// Cumulative progress targets worth counting (PSN's own progress targets).
+// Excluded: #14 (100% completion is a percentage, not a count) and #36 (one
+// single use of Combat Focus, not a running total).
+const CUMULATIVE = new Set([15, 16, 17, 18, 19, 25, 28, 30, 31, 32, 35, 40, 42, 43, 48, 52, 53, 54, 55]);
+const DEMO_COUNTERS = { 15: 187, 16: 7, 17: 31, 18: 9, 19: 13, 25: 6, 28: 11, 30: 2, 31: 57, 32: 34, 35: 61, 40: 3, 42: 41, 43: 6, 48: 214, 52: 184000, 53: 73000, 54: 5, 55: 7 };
 const STAGES = [
   { n: 1, title: 'Stage 1 — Play the story', blurb: 'Chapters 1–4, the named story missions and the finale. The 15 story trophies come naturally; do the partner and secret moments listed in the pre-finale checklist before the final mission.' },
   { n: 2, title: 'Stage 2 — Strangers & side missions', blurb: 'The five named stranger finales plus three more strands for the silver, the unique-animal hunt, the partner trophies and the choice counter. Do strands as their icons appear.' },
@@ -20,6 +26,7 @@ const detailEl = $('detail');
 const params = new URLSearchParams(location.search);
 let doc = null;
 let earned = new Set();
+let counters = {};
 let spoiler = false;
 let selectedId = null;
 
@@ -34,6 +41,50 @@ function loadProgress() {
 
 function saveProgress() {
   localStorage.setItem(PROGRESS_KEY, JSON.stringify([...earned]));
+}
+
+function loadCounters() {
+  try {
+    const raw = localStorage.getItem(COUNTERS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') return cleanCounters(parsed);
+    }
+  } catch { /* corrupted save: start fresh */ }
+  if (params.has('demo')) return { ...DEMO_COUNTERS };
+  return {};
+}
+
+function saveCounters() {
+  localStorage.setItem(COUNTERS_KEY, JSON.stringify(counters));
+}
+
+/** Keeps only known cumulative trophies, clamped to 0..target. */
+function cleanCounters(obj) {
+  const out = {};
+  for (const [k, v] of Object.entries(obj)) {
+    const id = Number(k);
+    const t = doc ? doc.trophies.find((x) => x.id === id) : null;
+    if (t && CUMULATIVE.has(id) && Number.isFinite(v)) out[id] = Math.max(0, Math.min(t.target, Math.floor(v)));
+  }
+  return out;
+}
+
+function counterStep(t) {
+  return t.target >= 10000 ? 1000 : t.target >= 100 ? 10 : 1;
+}
+
+function counterLabel(t) {
+  const n = counters[t.id] || 0;
+  if (t.id === 52 || t.id === 53) return 'Progress: $' + n.toLocaleString('en-US') + ' / $' + t.target.toLocaleString('en-US');
+  return 'Progress: ' + n.toLocaleString('en-US') + ' / ' + t.target.toLocaleString('en-US');
+}
+
+function setCounter(id, value) {
+  const t = trophyById(id);
+  if (!t || !CUMULATIVE.has(id)) return;
+  counters[id] = Math.max(0, Math.min(t.target, value));
+  saveCounters();
 }
 
 function trophyById(id) {
@@ -126,8 +177,10 @@ function makeTrophyCard(t) {
   box.setAttribute('aria-label', 'Mark ' + t.name + ' earned');
   box.addEventListener('click', (ev) => {
     ev.stopPropagation();
-    if (box.checked) earned.add(t.name);
-    else earned.delete(t.name);
+    if (box.checked) {
+      earned.add(t.name);
+      if (CUMULATIVE.has(t.id)) setCounter(t.id, t.target);
+    } else earned.delete(t.name);
     saveProgress();
     renderList();
     renderDetail();
@@ -169,6 +222,12 @@ function makeTrophyCard(t) {
     tg.textContent = targetLabel(t);
     tags.append(tg);
   }
+  if (CUMULATIVE.has(t.id)) {
+    const cg = document.createElement('span');
+    cg.className = 'tag counter';
+    cg.textContent = counterLabel(t);
+    tags.append(cg);
+  }
   body.append(name, document.createElement('br'), desc, tags);
   row.append(box, body);
   card.append(row);
@@ -199,6 +258,47 @@ function renderDetail() {
     tg.className = 'target';
     tg.textContent = targetLabel(t);
     detailEl.append(tg);
+  }
+  // Cited sources, right under the header: the guide's words reach the
+  // reader here, not only in the Sources list at the bottom.
+  const cite = document.createElement('p');
+  cite.className = 'cited';
+  cite.textContent = 'Cited sources: ';
+  for (const name of t.sources) {
+    const a = document.createElement('a');
+    a.textContent = name;
+    const url = sourceUrl(name);
+    if (url) { a.href = url; a.target = '_blank'; a.rel = 'noopener'; }
+    cite.append(a);
+    cite.append(document.createTextNode(' · '));
+  }
+  cite.removeChild(cite.lastChild);
+  detailEl.append(cite);
+  if (CUMULATIVE.has(t.id)) {
+    const step = document.createElement('p');
+    step.className = 'counterRow';
+    const label = document.createElement('span');
+    label.textContent = 'Your progress: ';
+    const minus = document.createElement('button');
+    minus.type = 'button';
+    minus.textContent = '−' + counterStep(t);
+    minus.addEventListener('click', () => {
+      setCounter(t.id, (counters[t.id] || 0) - counterStep(t));
+      renderList();
+      renderDetail();
+    });
+    const val = document.createElement('strong');
+    val.textContent = counterLabel(t).replace('Progress: ', '');
+    const plus = document.createElement('button');
+    plus.type = 'button';
+    plus.textContent = '+' + counterStep(t);
+    plus.addEventListener('click', () => {
+      setCounter(t.id, (counters[t.id] || 0) + counterStep(t));
+      renderList();
+      renderDetail();
+    });
+    step.append(label, minus, document.createTextNode(' '), val, document.createTextNode(' '), plus);
+    detailEl.append(step);
   }
   const off = document.createElement('p');
   off.className = 'official';
@@ -300,7 +400,7 @@ function renderMissables() {
 }
 
 function exportProgress() {
-  const data = { game: 'Grand Theft Auto VI', guide: 'Leonida Platinum', exportedAt: new Date().toISOString(), earned: [...earned] };
+  const data = { game: 'Grand Theft Auto VI', guide: 'Leonida Platinum', exportedAt: new Date().toISOString(), earned: [...earned], counters };
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
   a.download = 'gta6-trophy-progress.json';
@@ -316,6 +416,10 @@ function importProgress(file) {
     const good = (Array.isArray(names) ? names : []).filter((n) => known.has(n));
     if (!good.length) throw new Error('no known trophy names');
     earned = new Set(good);
+    if (data && typeof data === 'object' && data.counters) {
+      counters = cleanCounters(data.counters);
+      saveCounters();
+    }
     saveProgress();
     renderList();
     renderDetail();
@@ -350,7 +454,8 @@ async function boot() {
   doc = await (await fetch('data/trophies.json')).json();
   spoiler = localStorage.getItem(SPOILER_KEY) === '1';
   earned = loadProgress();
-  if (params.has('demo')) saveProgress();
+  counters = loadCounters();
+  if (params.has('demo')) { saveProgress(); saveCounters(); }
   applyParams();
   $('spoiler').checked = spoiler;
   $('tabs').addEventListener('click', (ev) => {
@@ -376,9 +481,11 @@ async function boot() {
     ev.target.value = '';
   });
   $('reset').addEventListener('click', () => {
-    if (confirm('Clear all earned trophies in this tracker?')) {
+    if (confirm('Clear all earned trophies and progress counters in this tracker?')) {
       earned = new Set();
+      counters = {};
       saveProgress();
+      saveCounters();
       renderList();
       renderDetail();
       renderRoadmap();
